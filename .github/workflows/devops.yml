@@ -1,0 +1,82 @@
+name: Terraform-Automation-Deployment
+on:
+  push:
+    branches:
+      - stg
+      - main
+
+env:
+  DEPLOYMENT_ENV: ${{ github.head_ref || github.ref_name }}
+  # Github Secrets
+  AWS_ACCESS_KEY_ID_STG: '${{ secrets.AWS_ACCESS_KEY_ID_STG }}'
+  AWS_SECRET_ACCESS_KEY_STG: '${{ secrets.AWS_SECRET_ACCESS_KEY_STG }}'
+  TFSTATE_BUCKET_STG: '${{ secrets.TFSTATE_BUCKET_STG }}'
+  AWS_DYNAMODB_TABLE_STG: '${{ secrets.AWS_DYNAMODB_TABLE_STG }}'
+
+  AWS_ACCESS_KEY_ID_PRO: '${{ secrets.AWS_ACCESS_KEY_ID_PRO }}'
+  AWS_SECRET_ACCESS_KEY_PRO: '${{ secrets.AWS_SECRET_ACCESS_KEY_PRO }}'
+  TFSTATE_BUCKET_PRO: '${{ secrets.TFSTATE_BUCKET_PRO }}'
+  AWS_DYNAMODB_TABLE_PRO: '${{ secrets.AWS_DYNAMODB_TABLE_PRO }}'
+      
+jobs:
+  terraform-automation-job:
+    runs-on: ubuntu-latest
+    steps:
+      
+      - name: Check branch and corresponding deployment environment
+        run: |
+          echo "Branch & Environment To Deploy Artifacts"
+          echo ${DEPLOYMENT_ENV}
+          echo "DEPLOYMENT_ENV=${DEPLOYMENT_ENV}" >> $GITHUB_ENV
+          echo "export DEPLOYMENT_ENV=\"${DEPLOYMENT_ENV}\"" >> .env-vars
+
+      - name: Setup Stage Provider & Backend credentials
+        if: env.DEPLOYMENT_ENV == 'stg'
+        run: |
+          echo "Setup Stage Provider & Backend credentials"
+          echo "environment=stg" >> $GITHUB_ENV
+          echo "export environment=\"stg\"" >> .env-vars
+          echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID_STG}" >> $GITHUB_ENV
+          echo "export AWS_ACCESS_KEY_ID=\"${AWS_ACCESS_KEY_ID_STG}\"" >> .env-vars
+          echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY_STG}" >> $GITHUB_ENV
+          echo "export AWS_SECRET_ACCESS_KEY=\"${AWS_SECRET_ACCESS_KEY_STG}\"" >> .env-vars
+          echo "TFSTATE_BUCKET=${TFSTATE_BUCKET_STG}" >> $GITHUB_ENV
+          echo "export TFSTATE_BUCKET=\"${TFSTATE_BUCKET_STG}\"" >> .env-vars
+          echo "AWS_DYNAMODB_TABLE=${AWS_DYNAMODB_TABLE_STG}" >> $GITHUB_ENV
+          echo "export AWS_DYNAMODB_TABLE=\"${AWS_DYNAMODB_TABLE_STG}\"" >> .env-vars
+
+      - name: Setup Stage Provider & Backend credentials
+        if: env.DEPLOYMENT_ENV == 'main'
+        run: |
+          echo "Setup Stage Provider & Backend credentials"
+          echo "environment=pro" >> $GITHUB_ENV
+          echo "export environment=\"pro\"" >> .env-vars
+          echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID_PRO}" >> $GITHUB_ENV
+          echo "export AWS_ACCESS_KEY_ID=\"${AWS_ACCESS_KEY_ID_PRO}\"" >> .env-vars
+          echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY_PRO}" >> $GITHUB_ENV
+          echo "export AWS_SECRET_ACCESS_KEY=\"${AWS_SECRET_ACCESS_KEY_PRO}\"" >> .env-vars
+          echo "TFSTATE_BUCKET=${TFSTATE_BUCKET_PRO}" >> $GITHUB_ENV
+          echo "export TFSTATE_BUCKET=\"${TFSTATE_BUCKET_PRO}\"" >> .env-vars
+          echo "AWS_DYNAMODB_TABLE=${AWS_DYNAMODB_TABLE_PRO}" >> $GITHUB_ENV
+          echo "export AWS_DYNAMODB_TABLE=\"${AWS_DYNAMODB_TABLE_PRO}\"" >> .env-vars 
+      
+      - name: Checkout local repo
+        uses: actions/checkout@v3
+    
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.6
+
+      - name: Terraform Init
+        id: init
+        run: terraform init -backend-config="bucket=${TFSTATE_BUCKET}" -backend-config="dynamodb_table=${AWS_DYNAMODB_TABLE}"
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color
+        continue-on-error: false
+
+      - name: Terraform Apply
+        id: apply
+        run: terraform apply --auto-approve
