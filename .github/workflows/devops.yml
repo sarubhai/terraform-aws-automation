@@ -34,8 +34,8 @@ jobs:
         if: env.DEPLOYMENT_ENV == 'stg'
         run: |
           echo "Setup Stage Provider & Backend credentials"
-          echo "environment=stg" >> $GITHUB_ENV
-          echo "export environment=\"stg\"" >> .env-vars
+          echo "TF_VAR_environment=stg" >> $GITHUB_ENV
+          echo "export TF_VAR_environment=\"stg\"" >> .env-vars
           echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID_STG}" >> $GITHUB_ENV
           echo "export AWS_ACCESS_KEY_ID=\"${AWS_ACCESS_KEY_ID_STG}\"" >> .env-vars
           echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY_STG}" >> $GITHUB_ENV
@@ -49,8 +49,8 @@ jobs:
         if: env.DEPLOYMENT_ENV == 'main'
         run: |
           echo "Setup Stage Provider & Backend credentials"
-          echo "environment=pro" >> $GITHUB_ENV
-          echo "export environment=\"pro\"" >> .env-vars
+          echo "TF_VAR_environment=pro" >> $GITHUB_ENV
+          echo "export TF_VAR_environment=\"pro\"" >> .env-vars
           echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID_PRO}" >> $GITHUB_ENV
           echo "export AWS_ACCESS_KEY_ID=\"${AWS_ACCESS_KEY_ID_PRO}\"" >> .env-vars
           echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY_PRO}" >> $GITHUB_ENV
@@ -74,7 +74,7 @@ jobs:
 
       - name: Terraform Plan
         id: plan
-        run: terraform plan -no-color
+        run: terraform plan
         continue-on-error: false
 
       - name: Terraform Apply
