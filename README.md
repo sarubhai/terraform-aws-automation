@@ -9,6 +9,7 @@ The infrastructure that is used by Terraform (S3 backend for State File, DynamoD
 - Github Branches - dev, stg, main corresponds to respective AWS Accounts
 - ** Ensure Latest Version of Terraform & AWS Provider Plugin & Modules **
 - Ensure Encyption & Deletion Protection is on for the S3 Buckets & DynamoDB tables (State Management)
+- Enable Bucket Versioning to allow for state recovery in the case of accidental deletions and human error
 - Deployment to dev from Local Machines using IAM credentials of individual developers
 - Github Actions to provision resources in stg & pro
 
