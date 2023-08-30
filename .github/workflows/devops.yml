@@ -5,16 +5,19 @@ on:
       - stg
       - main
 
+permissions:
+  id-token: write
+  contents: read
+
 env:
+  AWS_REGION: "eu-central-1"
   DEPLOYMENT_ENV: ${{ github.head_ref || github.ref_name }}
   # Github Secrets
-  AWS_ACCESS_KEY_ID_STG: '${{ secrets.AWS_ACCESS_KEY_ID_STG }}'
-  AWS_SECRET_ACCESS_KEY_STG: '${{ secrets.AWS_SECRET_ACCESS_KEY_STG }}'
+  AWS_ACCOUNT_ID_STG: '${{ secrets.AWS_ACCOUNT_ID_STG }}'
   TFSTATE_BUCKET_STG: '${{ secrets.TFSTATE_BUCKET_STG }}'
   AWS_DYNAMODB_TABLE_STG: '${{ secrets.AWS_DYNAMODB_TABLE_STG }}'
 
-  AWS_ACCESS_KEY_ID_PRO: '${{ secrets.AWS_ACCESS_KEY_ID_PRO }}'
-  AWS_SECRET_ACCESS_KEY_PRO: '${{ secrets.AWS_SECRET_ACCESS_KEY_PRO }}'
+  AWS_ACCOUNT_ID_PRO: '${{ secrets.AWS_ACCOUNT_ID_PRO }}'
   TFSTATE_BUCKET_PRO: '${{ secrets.TFSTATE_BUCKET_PRO }}'
   AWS_DYNAMODB_TABLE_PRO: '${{ secrets.AWS_DYNAMODB_TABLE_PRO }}'
       
@@ -36,33 +39,36 @@ jobs:
           echo "Setup Stage Provider & Backend credentials"
           echo "TF_VAR_environment=stg" >> $GITHUB_ENV
           echo "export TF_VAR_environment=\"stg\"" >> .env-vars
-          echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID_STG}" >> $GITHUB_ENV
-          echo "export AWS_ACCESS_KEY_ID=\"${AWS_ACCESS_KEY_ID_STG}\"" >> .env-vars
-          echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY_STG}" >> $GITHUB_ENV
-          echo "export AWS_SECRET_ACCESS_KEY=\"${AWS_SECRET_ACCESS_KEY_STG}\"" >> .env-vars
+          echo "AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID_STG}" >> $GITHUB_ENV
+          echo "export AWS_ACCOUNT_ID=\"${AWS_ACCOUNT_ID_STG}\"" >> .env-vars
           echo "TFSTATE_BUCKET=${TFSTATE_BUCKET_STG}" >> $GITHUB_ENV
           echo "export TFSTATE_BUCKET=\"${TFSTATE_BUCKET_STG}\"" >> .env-vars
           echo "AWS_DYNAMODB_TABLE=${AWS_DYNAMODB_TABLE_STG}" >> $GITHUB_ENV
           echo "export AWS_DYNAMODB_TABLE=\"${AWS_DYNAMODB_TABLE_STG}\"" >> .env-vars
 
-      - name: Setup Stage Provider & Backend credentials
+      - name: Setup Production Provider & Backend credentials
         if: env.DEPLOYMENT_ENV == 'main'
         run: |
-          echo "Setup Stage Provider & Backend credentials"
+          echo "Setup Production Provider & Backend credentials"
           echo "TF_VAR_environment=pro" >> $GITHUB_ENV
           echo "export TF_VAR_environment=\"pro\"" >> .env-vars
-          echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID_PRO}" >> $GITHUB_ENV
-          echo "export AWS_ACCESS_KEY_ID=\"${AWS_ACCESS_KEY_ID_PRO}\"" >> .env-vars
-          echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY_PRO}" >> $GITHUB_ENV
-          echo "export AWS_SECRET_ACCESS_KEY=\"${AWS_SECRET_ACCESS_KEY_PRO}\"" >> .env-vars
+          echo "AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID_PRO}" >> $GITHUB_ENV
+          echo "export AWS_ACCOUNT_ID=\"${AWS_ACCOUNT_ID_PRO}\"" >> .env-vars
           echo "TFSTATE_BUCKET=${TFSTATE_BUCKET_PRO}" >> $GITHUB_ENV
           echo "export TFSTATE_BUCKET=\"${TFSTATE_BUCKET_PRO}\"" >> .env-vars
           echo "AWS_DYNAMODB_TABLE=${AWS_DYNAMODB_TABLE_PRO}" >> $GITHUB_ENV
-          echo "export AWS_DYNAMODB_TABLE=\"${AWS_DYNAMODB_TABLE_PRO}\"" >> .env-vars 
+          echo "export AWS_DYNAMODB_TABLE=\"${AWS_DYNAMODB_TABLE_PRO}\"" >> .env-vars
       
       - name: Checkout local repo
         uses: actions/checkout@v3
     
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/GitHubAction-AssumeRoleWithAction
+          aws-region: ${{ env.AWS_REGION }}
+          disable-retry: "true"
+      
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
