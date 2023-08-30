@@ -16,6 +16,5 @@ provider "aws" {
   # Configuration options
   region = "eu-central-1"
   # Github Secrets & Actions to Set Environment Variables
-  # AWS_ACCESS_KEY_ID
-  # AWS_SECRET_ACCESS_KEY
+  # AWS_ROLE_ARN
 }
