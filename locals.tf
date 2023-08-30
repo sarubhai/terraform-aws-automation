@@ -1,4 +1,4 @@
-# Name: data.tf
+# Name: locals.tf
 # Owner: Saurav Mitra
 # Description: This terraform config declares local blocks
 # https://developer.hashicorp.com/terraform/language/values/locals
