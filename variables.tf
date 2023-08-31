@@ -15,7 +15,7 @@ variable "owner" {
 }
 
 variable "environment" {
-  description = "This environment tag will be included in the owner of the resources."
+  description = "This environment tag will be included in the environment of the resources."
   default     = "dev"
 }
 
