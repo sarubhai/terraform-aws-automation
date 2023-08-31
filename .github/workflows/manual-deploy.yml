@@ -1,10 +1,10 @@
 # When simulating in single AWS Account
-name: Manual Destroy of Resources
+name: Manual Deployment of Resources
 on:
   workflow_dispatch:
     inputs:
       environment:
-        description: "environment for manual destroy"
+        description: "environment for manual deploy"
         required: true
 
 permissions:
@@ -14,10 +14,15 @@ permissions:
 env:
   AWS_REGION: "eu-central-1"
   # Conditionals Envs
+  ACT_IS_DEV: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev' }}
   ACT_IS_STG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'stg' }}
   ACT_IS_PRO: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'pro' }}
   
   # Github Secrets
+  AWS_ACCOUNT_ID_DEV: '${{ secrets.AWS_ACCOUNT_ID_DEV }}'
+  TFSTATE_BUCKET_DEV: '${{ secrets.TFSTATE_BUCKET_DEV }}'
+  AWS_DYNAMODB_TABLE_DEV: '${{ secrets.AWS_DYNAMODB_TABLE_DEV }}'
+  
   AWS_ACCOUNT_ID_STG: '${{ secrets.AWS_ACCOUNT_ID_STG }}'
   TFSTATE_BUCKET_STG: '${{ secrets.TFSTATE_BUCKET_STG }}'
   AWS_DYNAMODB_TABLE_STG: '${{ secrets.AWS_DYNAMODB_TABLE_STG }}'
@@ -27,10 +32,23 @@ env:
   AWS_DYNAMODB_TABLE_PRO: '${{ secrets.AWS_DYNAMODB_TABLE_PRO }}'
 
 jobs:
-  destroy-manual-job:
+  manual-deploy-job:
     runs-on: ubuntu-latest
     steps:
-      
+
+      - name: Setup Dev Provider & Backend credentials
+        if: env.ACT_IS_DEV == 'true'
+        run: |
+          echo "Setup Dev Provider & Backend credentials"
+          echo "TF_VAR_environment=dev" >> $GITHUB_ENV
+          echo "export TF_VAR_environment=\"dev\"" >> .env-vars
+          echo "AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID_DEV}" >> $GITHUB_ENV
+          echo "export AWS_ACCOUNT_ID=\"${AWS_ACCOUNT_ID_DEV}\"" >> .env-vars
+          echo "TFSTATE_BUCKET=${TFSTATE_BUCKET_DEV}" >> $GITHUB_ENV
+          echo "export TFSTATE_BUCKET=\"${TFSTATE_BUCKET_DEV}\"" >> .env-vars
+          echo "AWS_DYNAMODB_TABLE=${AWS_DYNAMODB_TABLE_DEV}" >> $GITHUB_ENV
+          echo "export AWS_DYNAMODB_TABLE=\"${AWS_DYNAMODB_TABLE_DEV}\"" >> .env-vars
+          
       - name: Setup Stage Provider & Backend credentials
         if: env.ACT_IS_STG == 'true'
         run: |
@@ -56,7 +74,7 @@ jobs:
           echo "export TFSTATE_BUCKET=\"${TFSTATE_BUCKET_PRO}\"" >> .env-vars
           echo "AWS_DYNAMODB_TABLE=${AWS_DYNAMODB_TABLE_PRO}" >> $GITHUB_ENV
           echo "export AWS_DYNAMODB_TABLE=\"${AWS_DYNAMODB_TABLE_PRO}\"" >> .env-vars
-      
+
       - name: Checkout local repo
         uses: actions/checkout@v3
     
@@ -64,15 +82,14 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v3
         with:
           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/GitHubAction-AssumeRoleWithAction
-          role-session-name: GitHub_to_AWS_via_FederatedOIDC
           aws-region: ${{ env.AWS_REGION }}
           disable-retry: "true"
-      
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.5.6
-
+          
       - name: Terraform Init
         id: init
         run: terraform init -backend-config="bucket=${TFSTATE_BUCKET}" -backend-config="dynamodb_table=${AWS_DYNAMODB_TABLE}"
@@ -82,6 +99,6 @@ jobs:
         run: terraform plan
         continue-on-error: false
 
-      - name: Terraform Destroy
-        id: destroy
-        run: terraform destroy --auto-approve
+      - name: Terraform Apply
+        id: apply
+        run: terraform apply --auto-approve

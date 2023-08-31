@@ -538,3 +538,37 @@ output "vpc_flow_log_cloudwatch_iam_role_arn" {
   description = "The ARN of the IAM role used when pushing logs to Cloudwatch log group"
   value       = module.vpc.vpc_flow_log_cloudwatch_iam_role_arn
 }
+
+# tf-snowflake S3 & DynamoDB
+output "s3_tf_snowflake_state_id" {
+  value       = aws_s3_bucket.tf_snowflake_state.id
+  description = "The S3 Bucket Name for managing Terraform State to provision Snowflake resources."
+}
+
+output "s3_tf_snowflake_state_arn" {
+  value       = aws_s3_bucket.tf_snowflake_state.arn
+  description = "The S3 Bucket ARN for managing Terraform State to provision Snowflake resources."
+}
+
+
+output "dynamodb_tf_snowflake_state_lock_id" {
+  value       = aws_dynamodb_table.tf_snowflake_state_lock.id
+  description = "The DynamoDB Table Name for managing Terraform State Lock to provision Snowflake resources."
+}
+
+output "dynamodb_tf_snowflake_state_lock_arn" {
+  value       = aws_dynamodb_table.tf_snowflake_state_lock.arn
+  description = "The DynamoDB Table ARN for managing Terraform State Lock to provision Snowflake resources."
+}
+
+
+# OIDC
+output "github_actions_role_id" {
+  value       = aws_iam_role.github_actions_role.id
+  description = "The Github Actions Role Name for assuming on OIDC Github WebIdentity authorisation."
+}
+
+output "github_actions_role_arn" {
+  value       = aws_iam_role.github_actions_role.arn
+  description = "The Github Actions Role ARN for assuming on OIDC Github WebIdentity authorisation."
+}

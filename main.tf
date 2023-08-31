@@ -1,6 +1,6 @@
 # Name: main.tf
 # Owner: Saurav Mitra
-# Description: This terraform config will create a AWS VPC using a module:
+# Description: This terraform config will create a AWS VPC using a module
 
 
 module "vpc" {
